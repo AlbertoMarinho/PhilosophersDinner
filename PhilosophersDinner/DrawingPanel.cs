@@ -2,14 +2,6 @@ namespace PhilosophersDinner
 {
     public partial class DrawingPanel
     {
-        public DrawingPanel()
-        {
-            InitializeComponent();
-
-            // Adicionar evento ao botão
-            StartButton.Click += StartButton_Click;
-        }
-
         private void StartButton_Click(object sender, EventArgs e)
         {
             this.Hide();

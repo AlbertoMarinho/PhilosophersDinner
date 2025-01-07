@@ -1,11 +1,19 @@
 ﻿namespace PhilosophersDinner
 {
-    partial class DrawingPanel : Form
+    public partial class DrawingPanel : Form
     {
         private System.ComponentModel.IContainer components = null;
 
         private Label TitleLabel;
         private Button StartButton;
+
+        public DrawingPanel()
+        {
+            InitializeComponent();
+
+            // Configurar lógica de redimensionamento no evento Load
+            Load += (sender, e) => ConfigureResizeLogic();
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -57,22 +65,21 @@
             Text = "Jantar dos Filósofos";
 
             // Centralizar controles inicialmente
-            CenterControls();
-
-            // Redefinir posições ao redimensionar o formulário
-            Resize += (sender, e) => CenterControls();
+            TitleLabel.Location = new Point((ClientSize.Width - TitleLabel.Width) / 2, 20);
+            StartButton.Location = new Point((ClientSize.Width - StartButton.Width) / 2, ClientSize.Height - StartButton.Height - 20);
 
             ResumeLayout(false);
             PerformLayout();
         }
 
-        private void CenterControls()
+        private void ConfigureResizeLogic()
         {
-            // Centralizar título
-            TitleLabel.Location = new Point((ClientSize.Width - TitleLabel.Width) / 2, 20);
-
-            // Centralizar botão na parte inferior
-            StartButton.Location = new Point((ClientSize.Width - StartButton.Width) / 2, ClientSize.Height - StartButton.Height - 20);
+            // Adicionar lógica de redimensionamento
+            Resize += (sender, e) =>
+            {
+                TitleLabel.Location = new Point((ClientSize.Width - TitleLabel.Width) / 2, 20);
+                StartButton.Location = new Point((ClientSize.Width - StartButton.Width) / 2, ClientSize.Height - StartButton.Height - 20);
+            };
         }
     }
 }
