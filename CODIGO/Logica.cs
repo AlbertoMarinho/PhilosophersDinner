@@ -25,8 +25,11 @@ class Program
     {
         while (true)
         {
-            // Filósofo pensa
-            Pensar(filosofoId);
+            // Filósofo pensa 
+            if (estado[filosofoId] != FAMINTO)
+            {
+                Pensar(filosofoId);
+            }
 
             // Filósofo fica faminto
             FicarFaminto(filosofoId);
