@@ -3,118 +3,124 @@ using System.Threading;
 
 class Program
 {
-    // Constantes
-    const int QUANT = 5; // Quantidade de filósofos
-    const int PENSANDO = 0; // Estado de Pensando
-    const int FAMINTO = 1;  // Estado de Faminto
-    const int COMENDO = 2;  // Estado de Comendo
+    // Número de filósofos
+    const int NUM_FILOSOFOS = 5;
 
-    // Arrays e variáveis globais
-    static int[] estado = new int[QUANT]; // Estado dos filósofos
-    static Mutex[] muxFilo = new Mutex[QUANT]; // Mutex para cada filósofo
-    static Mutex mutex = new Mutex(); // Região crítica
-    static Thread[] jantar = new Thread[QUANT]; // Threads dos filósofos
+    // Semáforo para garantir que no máximo 4 filósofos possam tentar comer ao mesmo tempo
+    static Semaphore semaforo = new Semaphore(NUM_FILOSOFOS - 1, NUM_FILOSOFOS - 1);
+
+    // Mutex para proteger o acesso ao garfo
+    static Mutex[] mutex = new Mutex[NUM_FILOSOFOS];
+
+    // Definindo os estados
+    const int PENSANDO = 0;
+    const int FAMINTO = 1;
+    const int COMENDO = 2;
+
+    // Estado de cada filósofo
+    static int[] estado = new int[NUM_FILOSOFOS];
 
     // Função que simula o comportamento de um filósofo
-    static void Filosofo(object obj)
+    static void Comer(int filosofoId)
     {
-        int id = (int)obj; // Repassa o id do filósofo
-
         while (true)
         {
-            Pensar(id); // Filósofo pensa
-            PegarHashi(id); // Filósofo tenta pegar os hashis
-            Comer(id); // Filósofo come
-            DevolverHashi(id); // Filósofo devolve os hashis
+            // Filósofo pensa
+            Pensar(filosofoId);
+
+            // Filósofo fica faminto
+            FicarFaminto(filosofoId);
+
+            // Filósofo tenta pegar os garfos
+            semaforo.WaitOne();  // Aguardando para tentar comer
+
+            // Só deixa dois filósofos comerem simultaneamente se não forem vizinhos
+            if (PodeComerJuntos(filosofoId))
+            {
+                // Tenta pegar o garfo esquerdo
+                mutex[filosofoId].WaitOne();
+                // Tenta pegar o garfo direito (com verificação de vizinhos)
+                mutex[(filosofoId + 1) % NUM_FILOSOFOS].WaitOne();
+
+                // Alterando o estado para COMENDO
+                estado[filosofoId] = COMENDO;
+                Console.WriteLine($"Filósofo {filosofoId} está comendo...");
+
+                // Simula o tempo que o filósofo leva para comer
+                Thread.Sleep(2000);
+
+                // Devolve os garfos após comer
+                mutex[(filosofoId + 1) % NUM_FILOSOFOS].ReleaseMutex();
+                mutex[filosofoId].ReleaseMutex();
+
+                // Alterando o estado para PENSANDO
+                estado[filosofoId] = PENSANDO;
+                Console.WriteLine($"Filósofo {filosofoId} terminou de comer.");
+            }
+            else
+            {
+                Console.WriteLine($"Filósofo {filosofoId} não pode comer agora.");
+            }
+
+            // Filósofo pensa por um tempo antes de tentar pegar os garfos novamente
+            Thread.Sleep(1000);
+            semaforo.Release();  // Liberando para outro filósofo tentar comer
         }
     }
 
-    // Função que filósofo pega os hashis
-    static void PegarHashi(int idFilosofo)
+    // Função que verifica se o filósofo pode comer com outro (não vizinho)
+    static bool PodeComerJuntos(int filosofoId)
     {
-        mutex.WaitOne(); // Entra na região crítica
-        try
+        int[] combinacoes = new int[] {
+            0, 2, 0,3, 1, 3, 1, 4, 2, 0, 2,4,3,0,3,1,4,1,4,2 
+        };
+
+        for (int i = 0; i < combinacoes.Length; i += 2)
         {
-            Console.WriteLine($"Filósofo {idFilosofo} está faminto");
-            estado[idFilosofo] = FAMINTO; // Filósofo fica faminto
-            Intencao(idFilosofo); // Intenção de pegar os hashis
-        }
-        finally
-        {
-            mutex.ReleaseMutex(); // Sai da região crítica
+            if (filosofoId == combinacoes[i] && combinacoes[i + 1] < estado.Length && estado[combinacoes[i + 1]] == FAMINTO)
+            {
+                return true;
+            }
         }
 
-        muxFilo[idFilosofo].WaitOne(); // Bloqueia o mutex do filósofo
+        return false;
     }
 
-    // Função que filósofo devolve os hashis
-    static void DevolverHashi(int idFilosofo)
+    // Função que simula o filósofo pensando
+    static void Pensar(int filosofoId)
     {
-        mutex.WaitOne(); // Entra na região crítica
-
-        Console.WriteLine($"Filósofo {idFilosofo} está pensando");
-        estado[idFilosofo] = PENSANDO; // Filósofo termina de comer
-        Intencao((idFilosofo + QUANT - 1) % QUANT); // Vê se o vizinho da esquerda pode comer
-        Intencao((idFilosofo + 1) % QUANT); // Vê se o vizinho da direita pode comer
-
-        mutex.ReleaseMutex(); // Sai da região crítica
+        estado[filosofoId] = PENSANDO;
+        Console.WriteLine($"Filósofo {filosofoId} está pensando...");
+        Thread.Sleep(1000); // Simula o tempo que o filósofo gasta pensando
     }
 
-    // Função de intenção do filósofo em pegar os hashis
-    static void Intencao(int idFilosofo)
+    // Função que simula o filósofo ficando faminto
+    static void FicarFaminto(int filosofoId)
     {
-        
-
-        muxFilo[idFilosofo].WaitOne();
-
-        // Garantir que o filósofo só comerá se ambos os vizinhos não estiverem comendo
-        if (estado[idFilosofo] == FAMINTO &&
-            estado[(idFilosofo + QUANT - 1) % QUANT] != COMENDO &&
-            estado[(idFilosofo + 1) % QUANT] != COMENDO)
-        {
-            Console.WriteLine($"Filósofo {idFilosofo} ganhou a vez de comer");
-            estado[idFilosofo] = COMENDO; // Filósofo consegue comer
-
-            muxFilo[idFilosofo].ReleaseMutex(); // Libera o mutex do filósofo
-        }
-    }
-
-    // Função de pensar
-    static void Pensar(int idFilosofo)
-    {
-        Random rand = new Random();
-        int r = rand.Next(1, 11); // Gera um tempo aleatório entre 1 e 10 segundos
-        Console.WriteLine($"Filósofo {idFilosofo} pensa por {r} segundos");
-        Thread.Sleep(r * 1000); // Filósofo pensa por r segundos
-    }
-
-    // Função de comer
-    static void Comer(int idFilosofo)
-    {
-        Random rand = new Random();
-        int r = rand.Next(1, 6); // Gera um tempo aleatório entre 1 e 10 segundos
-        Console.WriteLine($"Filósofo {idFilosofo} come por {r} segundos");
-        Thread.Sleep(r * 1000); // Filósofo come por r segundos
+        estado[filosofoId] = FAMINTO;
+        Console.WriteLine($"Filósofo {filosofoId} está faminto...");
     }
 
     static void Main(string[] args)
     {
-        // Inicializa os mutexes dos filósofos
-        for (int i = 0; i < QUANT; i++)
+        // Inicializa os Mutexes para cada filósofo e os garfos
+        for (int i = 0; i < NUM_FILOSOFOS; i++)
         {
-            muxFilo[i] = new Mutex(); // Mutex para cada filósofo
+            mutex[i] = new Mutex();
+            estado[i] = PENSANDO; // Inicia todos os filósofos como pensando
         }
 
-        // Cria as threads (filósofos)
-        for (int i = 0; i < QUANT; i++)
+        // Cria threads para os filósofos
+        Thread[] threads = new Thread[NUM_FILOSOFOS];
+        for (int i = 0; i < NUM_FILOSOFOS; i++)
         {
-            int id = i; // Cria uma cópia local do id para cada thread
-            jantar[i] = new Thread(new ParameterizedThreadStart(Filosofo));
-            jantar[i].Start(id); // Inicia a thread do filósofo
+            int id = i; // Cópia local do id para a thread
+            threads[i] = new Thread(() => Comer(id));
+            threads[i].Start();
         }
 
-        // Espera todas as threads terminarem (o que, neste caso, nunca ocorrerá)
-        foreach (Thread t in jantar)
+        // Aguarda todas as threads terminarem (o que não vai acontecer devido ao loop infinito)
+        foreach (var t in threads)
         {
             t.Join();
         }
