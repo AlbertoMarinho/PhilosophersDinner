@@ -21,14 +21,6 @@
             this.SuspendLayout();
 
             // 
-            // infoLabel
-            // 
-            this.infoLabel.Text = "Tela do Jantar dos Filósofos";
-            this.infoLabel.Font = new Font("Arial", 16F, FontStyle.Bold, GraphicsUnit.Point);
-            this.infoLabel.TextAlign = ContentAlignment.MiddleCenter;
-            this.infoLabel.Dock = DockStyle.Fill;
-
-            // 
             // PhilosopherDinnerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -46,6 +38,8 @@
             Controls.Add(this.infoLabel);
 
             ResumeLayout(false);
+
+            this.Shown += new EventHandler(PhilosopherDinnerForm_Shown);
         }
     }
 }

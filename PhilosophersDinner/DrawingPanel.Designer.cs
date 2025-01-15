@@ -45,6 +45,7 @@
             StartButton.Font = new Font("Arial", 14.25F, FontStyle.Regular, GraphicsUnit.Point);
             StartButton.Text = "Iniciar";
             StartButton.Size = new Size(100, 40); // Tamanho fixo
+            StartButton.Click += StartButton_Click;
 
             // 
             // DrawingPanel
