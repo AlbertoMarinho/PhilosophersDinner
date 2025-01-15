@@ -40,12 +40,6 @@
                 filosofos[i].IsBackground = true;
                 filosofos[i].Start();
             }
-
-            // Aguarda threads terminarem (não acontece devido ao loop infinito)
-            //foreach (Thread filosofo in filosofos)
-            //{
-            //    filosofo.Join();
-            //}
         }
 
         private static void CicloFilosofo(int filosofoId)
